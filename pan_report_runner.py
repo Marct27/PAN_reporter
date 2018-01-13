@@ -15,79 +15,87 @@ import json
 import time
 import os
 
-#Workaround for self signed cerificates
+# Workaround for self signed cerificates
 ctx = ssl.create_default_context()
 ctx.check_hostname = False
 ctx.verify_mode = ssl.CERT_NONE
 rootdir = os.getcwd()
 
-#Force document formating as XML
+# Force document formating as XML
 head = 'headers={"Accept" : "application/xml"}'
 
+
 def parseXML(arg1, arg2):
-    #Parse xml and get root key value
+    # Parse xml and get root key value
     tree = ET.parse(resp)
     root = tree.getroot()
-    #From return xml find job id of report
-    j=root.find(arg1)
-    jID=j.find(arg2)
-    print 'Job ID :', jID.text
+    # From return xml find job id of report
+    j = root.find(arg1)
+    jID = j.find(arg2)
+    print('Job ID :', jID.text)
     return jID
 
+
 def urlRequest(arg1):
-    #Request url and open
+    # Request url and open
     req = urllib2.Request(host+arg1, head)
-    resp = urllib2.urlopen(req, context = ctx)
+    resp = urllib2.urlopen(req, context=ctx)
     return resp
 
-#Read configs from directory
-for config in os.listdir(rootdir):
+
+for config in os.listdir(rootdir):  # Read configs from directory
     if config.endswith(".conf"):
         with open(config) as json_data_file:
             cfg = json.load(json_data_file)
 
-        #Check for existing path and create if not found
-        path = os.path.join(os.getcwd(),cfg['customer'],cfg['interval'])
+        # Check for existing path and create if not found
+        path = os.path.join(os.getcwd(), cfg['customer'], cfg['interval'])
         if not os.path.exists(path):
             os.makedirs(path)
-            
-        #Define local variables from config file
+
+        # Define local variables from config file
         host = 'https://'+cfg['fw']['host']
         apiKey = cfg['fw']['apiKey']
         reports = cfg['fw']['reports']['reportName']
         vsys = cfg['fw']['vsys']
-        
-        #Loop through reports
+
+        # Loop through reports
         for i in reports:
-            #Verify if a vsys is required
+            # Verify if a vsys is required
             if vsys == "":
-                apiRunReport = '/api/?type=report&async=yes&reporttype=custom&reportname=%s&key=%s' % (i, apiKey)
+                apiRunReport = '/api/?type=report&async=yes&reporttype=\
+                custom&reportname=%s&key=%s' % (i, apiKey)
             else:
-                apiRunReport = '/api/?type=report&async=yes&reporttype=custom&vsys=%s&reportname=%s&key=%s' % (vsys, i, apiKey)
-            
-            print 'API URL Called for', i, ':', apiRunReport
-            
-            #Call URL and parse XML
+                apiRunReport = '/api/?type=report&async=yes&reporttype=\
+                custom&vsys=%s&reportname=%s&key=%s' % (vsys, i, apiKey)
+
+            print('API URL Called for', i, ':', apiRunReport)
+
+            # Call URL and parse XML
             resp = urlRequest(apiRunReport)
             jID = parseXML('result', 'job')
 
-            #Check status of jobs to ensure job has run before pulling report
+            # Check status of jobs to ensure job has run before pulling report
             state = ""
             while state != 'FIN':
                 time.sleep(5)
-            #From xml get job status
-                apiPullReport = '/api/?type=report&action=get&job-id=%s&key=%s' % (jID.text, apiKey)
+            # From xml get job status
+                apiPullReport = '/api/?type=report&action=get&job-id=%s\
+                &key=%s' % (jID.text, apiKey)
                 resp = urlRequest(apiPullReport)
                 tree = ET.parse(resp)
                 root = tree.getroot()
                 for s in root.iter('status'):
-                    print 'Job# {} for report : {} - Status: {}'.format(jID.text, i, s.text)
+                    print(
+                        "Job# {} for report : {} - Status: {}".format
+                        (jID.text, i, s.text))
                     state = s.text
-                #Pull report    
-                rep = urllib2.urlopen(host+apiPullReport, context = ctx,).read()
-                #Write report to file
+                # Pull report
+                rep = urllib2.urlopen(host+apiPullReport, context=ctx,)\
+                    .read()
+                # Write report to file
                 reportdir = os.path.join(path, '{}.xml'.format(i))
                 file = open(reportdir, 'w')
                 file.write(rep)
                 file.close()
-print "FINISHED !!"                
+print("FINISHED !!")
