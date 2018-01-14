@@ -3,12 +3,15 @@
 # by Marc Thompson - Layer 7
 
 # This script will run aginst the firewall entered in the variable below
+
 # The process is as follows:
 # * Pull a list of reports from config file
 # * Call API and capture the Job ID's associated with each report
 # * Check Job ID status and fetch report from firewall
 
-import urllib2
+import urllib.request
+import urllib.error
+import urllib.parse
 import ssl
 import xml.etree.ElementTree as ET
 import json
@@ -20,9 +23,6 @@ ctx = ssl.create_default_context()
 ctx.check_hostname = False
 ctx.verify_mode = ssl.CERT_NONE
 rootdir = os.getcwd()
-
-# Force document formating as XML
-head = 'headers={"Accept" : "application/xml"}'
 
 
 def parseXML(arg1, arg2):
@@ -38,8 +38,10 @@ def parseXML(arg1, arg2):
 
 def urlRequest(arg1):
     # Request url and open
-    req = urllib2.Request(host+arg1, head)
-    resp = urllib2.urlopen(req, context=ctx)
+    req = urllib.request.Request(
+                                host+arg1, data=None,
+                                headers={"Accept": "application/xml"})
+    resp = urllib.request.urlopen(req, context=ctx)
     return resp
 
 
@@ -64,10 +66,10 @@ for config in os.listdir(rootdir):  # Read configs from directory
             # Verify if a vsys is required
             if vsys == "":
                 apiRunReport = '/api/?type=report&async=yes&reporttype=\
-                custom&reportname=%s&key=%s' % (i, apiKey)
+custom&reportname=%s&key=%s' % (i, apiKey)
             else:
                 apiRunReport = '/api/?type=report&async=yes&reporttype=\
-                custom&vsys=%s&reportname=%s&key=%s' % (vsys, i, apiKey)
+custom&vsys=%s&reportname=%s&key=%s' % (vsys, i, apiKey)
 
             print('API URL Called for', i, ':', apiRunReport)
 
@@ -75,13 +77,15 @@ for config in os.listdir(rootdir):  # Read configs from directory
             resp = urlRequest(apiRunReport)
             jID = parseXML('result', 'job')
 
-            # Check status of jobs to ensure job has run before pulling report
+            # Check status of jobs to ensure
+            # job has run before pulling report
             state = ""
             while state != 'FIN':
                 time.sleep(5)
             # From xml get job status
                 apiPullReport = '/api/?type=report&action=get&job-id=%s\
-                &key=%s' % (jID.text, apiKey)
+&key=%s' % (jID.text, apiKey)
+                print(apiPullReport)
                 resp = urlRequest(apiPullReport)
                 tree = ET.parse(resp)
                 root = tree.getroot()
@@ -91,11 +95,12 @@ for config in os.listdir(rootdir):  # Read configs from directory
                         (jID.text, i, s.text))
                     state = s.text
                 # Pull report
-                rep = urllib2.urlopen(host+apiPullReport, context=ctx,)\
-                    .read()
+                rep = urllib.request.urlopen(
+                                            host+apiPullReport, context=ctx
+                                            ).read()
                 # Write report to file
                 reportdir = os.path.join(path, '{}.xml'.format(i))
                 file = open(reportdir, 'w')
-                file.write(rep)
+                file.write(str(rep))
                 file.close()
 print("FINISHED !!")
