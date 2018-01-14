@@ -102,3 +102,10 @@ ENV/
 
 # config files
 *.conf
+
+#  other
+.DS_Store
+bin/
+include/
+pip*
+share/
