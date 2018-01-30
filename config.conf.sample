@@ -1,9 +1,10 @@
 {
-  "customer": "Cutsomer_Name",
-  "interval": "monthly",
-  "fw": {
-    "host": "x.x.x.x",
-    "apiKey": "longrandomapikeygeneratedbythefirewall",
+"save_folder": "C:\\report\\folder",
+"customer_folder": "Customer_Name",
+"report_folder": "xml",
+"fw": {
+  "host": "xxx.xxx.xxx.xxx",
+  "apiKey": "verylongapikeygeneratedbythefirewall",
     "reports": {
       "reportName": [
         "report1",
@@ -11,6 +12,25 @@
         "report3"
       ]
     },
-    "vsys": ""
+    "vsys": "",
+    "custom_reports": {
+      "required": "no",
+      "reports": {
+        "virus_summary" : "<period>last-30-days</period><type><thsum><group-by>day-of-receive_time</group-by><aggregate-by><member>threatid</member></aggregate-by><values><member>sessions</member></values><sortby>sessions</sortby></thsum></type><query>subtype eq virus</query><topn>25</topn><topm>31</topm>",
+        "threat_summary" : "<period>last-30-days</period><type><thsum><group-by>day-of-receive_time</group-by><aggregate-by><member>threatid</member></aggregate-by><values><member>sessions</member></values><sortby>sessions</sortby></thsum></type><topn>25</topn><topm>31</topm>",
+        "spyware_summary" : "<period>last-30-days</period><type><thsum><group-by>day-of-receive_time</group-by><aggregate-by><member>threatid</member></aggregate-by><values><member>sessions</member></values><sortby>sessions</sortby></thsum></type><query>subtype eq spyware</query><topn>25</topn><topm>31</topm>",
+        "vulnerability_summary" : "<period>last-30-days</period><type><thsum><group-by>day-of-receive_time</group-by><aggregate-by><member>threatid</member></aggregate-by><values><member>sessions</member></values><sortby>sessions</sortby></thsum></type><query>subtype eq vulnerability</query><topn>25</topn><topm>31</topm>",
+        "file_summary" : "<period>last-30-days</period><type><data><group-by>day-of-receive_time</group-by><aggregate-by><member>threatid</member></aggregate-by><values><member>repeatcnt</member></values><sortby>repeatcnt</sortby></data></type><query>subtype eq file</query><topn>25</topn>"
+      }
+    },
+    "operational_reports": {
+      "required": "no",
+      "reports": {
+        "1-systeminfo" : "/api/?type=op&cmd=<show><system><info></info></system></show>",
+        "2-licenses" : "/api/?type=op&cmd=<request><license><info></info></license></request>",
+        "3-config-running" : "/api/?type=op&cmd=<show><config><running></running></config></show>",
+        "4-rules-unused" : "/api/?cmd=<show><running><rule-use><vsys>vsys1</vsys><type>unused</type><rule-base>security</rule-base></rule-use></running></show>&type=op"
+      }
+    }
   }
 }
